@@ -40,6 +40,7 @@ function App() {
 
 function Dashboard({ userId }) {
   const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [flash, setFlash] = useState(null); // brief confirmation/error banner
   const {
     expenses,
     categories,
@@ -70,6 +71,30 @@ function Dashboard({ userId }) {
     };
   }, [expenses]);
 
+  // PUBLIC_INTERFACE
+  async function quickAddTestExpense() {
+    /**
+     * Inserts a sample expense into Supabase for the current user.
+     * Uses: category='Test', amount=50.00, description='Test expense', date=current date.
+     * Displays a temporary confirmation or error message.
+     */
+    try {
+      await addExpense({
+        title: 'Test expense',
+        amount: 50.0,
+        category: 'Test',
+        date: new Date().toISOString(),
+        notes: 'Test expense',
+      });
+      setFlash({ type: 'success', text: 'Test expense added successfully.' });
+    } catch (e) {
+      setFlash({ type: 'error', text: e.message || 'Failed to add test expense.' });
+    } finally {
+      // Remove message after 3 seconds
+      setTimeout(() => setFlash(null), 3000);
+    }
+  }
+
   return (
     <>
       <div className="header">
@@ -82,12 +107,34 @@ function Dashboard({ userId }) {
           <div className="inline-filters" aria-label="Quick actions">
             <button className="btn ghost" onClick={refresh} title="Refresh data">Refresh</button>
             <button className="btn" onClick={() => setShowReceiptModal(true)}>Upload Receipt</button>
+            <button className="btn secondary" onClick={quickAddTestExpense} title="Insert a test expense">
+              Quick Add Test Expense
+            </button>
           </div>
         </div>
       </div>
 
       <div className="container">
         <Header />
+
+        {flash && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="card"
+            style={{
+              padding: 12,
+              margin: '12px 0',
+              borderLeft: `6px solid ${flash.type === 'success' ? 'var(--color-secondary)' : 'var(--color-error)'}`,
+              background: 'white',
+            }}
+          >
+            <div className="kicker" style={{ color: flash.type === 'success' ? 'var(--color-secondary)' : 'var(--color-error)' }}>
+              {flash.type === 'success' ? 'Success' : 'Error'}
+            </div>
+            <div style={{ marginTop: 4 }}>{flash.text}</div>
+          </div>
+        )}
 
         <div className="row" style={{ marginTop: 16 }}>
           <div className="col-12">
